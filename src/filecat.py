@@ -83,7 +83,10 @@ def trashpress(files: list[str]):
 
     for file in files:
         file = Path(file)
-        output_name = file.name if not file.is_dir else file.name + ".dir"
+        if not file.is_dir():
+            output_name = file.name
+        else:
+            output_name = file.name + ".dir"
         header(f"Archiving {file.name} to {TRASH}/trash/")
         run(f'tar -czvf "{TRASH}/{output_name}.tar.gz" "{file.relative_to(file.parent)}"', file.parent)
         header("Removing original file...")
