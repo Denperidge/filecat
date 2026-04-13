@@ -44,5 +44,10 @@ ln -s $(pwd)/src/* ~/.local/share/nemo/actions/
 ```
 Done! Further configuration can be done inside Nemo > Edit > Preferences > Plugins, or by changing the files within [src/](src/).
 
+### Run tests
+```sh
+echo yyyn | python tests/test.py
+```
+
 ## License
 This project is licensed under the [MIT License](LICENSE).
