@@ -77,14 +77,12 @@ def confirm(message: str):
     return selection == "y"
 
 """SECTION: commands"""
-TRASH = environ.get("FILECAT_TRASH", Path.home().joinpath("./.filecat/trash/"))
-
-def trashpress(files: list[str]):
-    if not TRASH.exists():
-        makedirs(str(TRASH.absolute()), exist_ok=True)
+def trashpress(files: list[str], trash_dir: Path):
+    if not trash_dir.exists():
+        makedirs(str(trash_dir.absolute()), exist_ok=True)
 
     extra_message = "" if check_all_usual_paths(files) else "\n\nWARNING: at least one of the selected paths are not in a regular user directory"
-    if not confirm(f"Are you sure you want to compress the following files to {TRASH}?{extra_message}\n\n[ {', '.join(files)} ]"):
+    if not confirm(f"Are you sure you want to compress the following files to {trash_dir}?{extra_message}\n\n[ {', '.join(files)} ]"):
         return
 
     for file in files:
@@ -93,13 +91,16 @@ def trashpress(files: list[str]):
             output_name = file.name
         else:
             output_name = file.name + ".dir"
-        header(f"Archiving {file.name} to {TRASH}/trash/")
-        run(f'tar -czvf "{TRASH}/{output_name}.tar.gz" "{file.relative_to(file.parent)}"', file.parent)
+        header(f"Archiving {file.name} to {trash_dir}")
+        run(f'tar -czvf "{trash_dir}/{output_name}.tar.gz" "{file.relative_to(file.parent)}"', file.parent)
         header("Removing original file...")
         if file.is_dir():
             rmtree(file.absolute())
         else:
             remove(file.absolute())
+
+def checksum():
+    pass
 
 commands = {
     "trashpress": trashpress
@@ -114,19 +115,23 @@ if __name__ == "__main__":
     parser.add_argument("command", choices=commands.keys())
     parser.add_argument("files", nargs="*")
     parser.add_argument("--trash",
-        default=TRASH,
+        default=environ.get("FILECAT_TRASH", Path.home().joinpath("./.filecat/trash/")),
         help="[trashpress], directory to move compressed files to. Defaults to the FILECAT_TRASH env var if defined, otherwise ~/.filecat/trash/")
 
     args = parser.parse_args()
     
     # Use global var to allow files format for now
-    TRASH = Path(args.trash)
 
     # Pass the file parameters to the command
     try:
-        commands[args.command](args.files)
+        match args.command:
+            case "trashpress":
+                trashpress(args.files, trash_dir=Path(args.trash))
+            case "checksum":
+                pass
     # If an error occurs during the command,
     # print it in red and require ENTER to continue
     except Exception as e:
+        print_red("Error whilst using filecat " + args.command)
         print_red(e)
         input("Press ENTER to close...")

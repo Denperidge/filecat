@@ -16,11 +16,12 @@ def remove_files(paths: list[Path]):
                 remove(path)
 
 # Wrapper for subprocess.run
-# with shell=True
+# with shell=True & optional env prefix & env var resetting
 def filecat(command: str, prefix:str=None):
     command = f"python src/filecat.py {command}"
     if prefix:
         command = prefix + " " + command
+    command = "unset FILECAT_TRASH && " + command
     return run(command, shell=True)
 
 
