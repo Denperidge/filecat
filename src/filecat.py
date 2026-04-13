@@ -4,20 +4,7 @@ from time import sleep
 from pathlib import Path
 from shutil import rmtree
 from os import remove, environ, makedirs
-
-"""
-Example action
-~/.local/share/nemo/actions/trash_and_compress.nemo_action
-----------------------------------------------------------
-[Nemo Action]
-Name=Trash & Compress
-Comment=Trash & Compress
-Exec=alacritty-run "Trashpress" 'python /home/user/.local/share/nemo/actions/filecat.py trashpress %F'
-Quote=double
-Icon-Name=bug-buddy
-Selection=Any
-Extensions=any
-"""
+import curses
 
 """SECTION: logging"""
 # Wrapper for print allowing terminal colour codes
@@ -64,11 +51,30 @@ def run(command: str, cwd:str=None):
         script = f"cd '{cwd}' && " + command
     return _run(command, shell=True)
 
-# Wrapper for run & zenity to ask for confirmation
-# If the return code is 0 (success), return True
+"""Section: Confirming & GUI"""
+CURSES_SCREEN = False
+def setup_curses():
+    screen = curses.initscr()  # Initialize
+    curses.noecho()
+    curses.cbreak()  # Don't require ENTER
+    return screen
+
+# Curses screen to ask for confirmation
+# If the answer is y or Y, return True
 # Else, return False
 def confirm(message: str):
-    return run(f"zenity --question --text='{message}'").returncode == 0
+    global CURSES_SCREEN
+    if not CURSES_SCREEN:
+        CURSES_SCREEN = setup_curses()
+    
+    CURSES_SCREEN.clear()
+    CURSES_SCREEN.addstr(message + "\n\n[y/N]: ")
+    CURSES_SCREEN.refresh()
+
+    selection = CURSES_SCREEN.getkey().lower()
+    curses.endwin()
+    
+    return selection == "y"
 
 """SECTION: commands"""
 TRASH = environ.get("FILECAT_TRASH", Path.home().joinpath("./.filecat/trash/"))
@@ -78,7 +84,7 @@ def trashpress(files: list[str]):
         makedirs(str(TRASH.absolute()), exist_ok=True)
 
     extra_message = "" if check_all_usual_paths(files) else "\n\nWARNING: at least one of the selected paths are not in a regular user directory"
-    if not confirm(f"Are you sure you want to compress the following files to {TRASH}?{extra_message}\n\n{', '.join(files)}"):
+    if not confirm(f"Are you sure you want to compress the following files to {TRASH}?{extra_message}\n\n[ {', '.join(files)} ]"):
         return
 
     for file in files:

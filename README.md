@@ -14,7 +14,7 @@ In my setup, it is used in combination with an [alacritty helper script & niri s
 ## How-to
 ### Requirements:
 - Python (3.9 or newer)
-- Zenity
+- Git or Curl, depending on your installation method
 
 ### CLI usage
 ```sh
