@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from time import sleep
 from pathlib import Path
 from shutil import rmtree
-from os import remove
+from os import remove, environ, makedirs
 
 """
 Example action
@@ -71,16 +71,21 @@ def confirm(message: str):
     return run(f"zenity --question --text='{message}'").returncode == 0
 
 """SECTION: commands"""
+TRASH = environ.get("FILECAT_TRASH", Path.home().joinpath("./.filecat/trash/"))
+
 def trashpress(files: list[str]):
+    if not TRASH.exists():
+        makedirs(str(TRASH.absolute()), exist_ok=True)
+
     extra_message = "" if check_all_usual_paths(files) else "\n\nWARNING: at least one of the selected paths are not in a regular user directory"
-    if not confirm(f"Are you sure you want to compress the following files to /mnt/videosgame/trash?{extra_message}\n\n{', '.join(files)}"):
+    if not confirm(f"Are you sure you want to compress the following files to {TRASH}?{extra_message}\n\n{', '.join(files)}"):
         return
 
     for file in files:
         file = Path(file)
         output_name = file.name if not file.is_dir else file.name + ".dir"
-        header(f"Archiving {file.name} to /mnt/videosgame/trash/")
-        run(f'tar -czvf "/mnt/videosgame/trash/{output_name}.tar.gz" "{file.relative_to(file.parent)}"', file.parent)
+        header(f"Archiving {file.name} to {TRASH}/trash/")
+        run(f'tar -czvf "{TRASH}/{output_name}.tar.gz" "{file.relative_to(file.parent)}"', file.parent)
         header("Removing original file...")
         if file.is_dir():
             rmtree(file.absolute())
@@ -99,8 +104,15 @@ if __name__ == "__main__":
         description=f"A file management CLI for CLI tool popup integrations in the file browser. Designed to integrate with Nemo actions: see {__file__} for an example action")
     parser.add_argument("command", choices=commands.keys())
     parser.add_argument("files", nargs="*")
+    parser.add_argument("--trash",
+        default=TRASH,
+        help="[trashpress], directory to move compressed files to. Defaults to the FILECAT_TRASH env var if defined, otherwise ~/.filecat/trash/")
 
     args = parser.parse_args()
+    
+    # Use global var to allow files format for now
+    TRASH = Path(args.trash)
+
     # Pass the file parameters to the command
     try:
         commands[args.command](args.files)
