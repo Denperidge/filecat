@@ -13,8 +13,11 @@ In my setup, it is used in combination with an [alacritty helper script & niri s
 
 ## How-to
 ### Requirements:
-- Python (3.9 or newer)
-- Git or Curl, depending on your installation method
+- *python* (3.9 or newer)
+- *git* or *curl*, depending on your installation method
+- `[trashpress]`: *tar*
+- `[checksum]`: a checksum cli tool. By default, *sha512sum* is used
+
 
 ### CLI usage
 ```sh
@@ -24,8 +27,11 @@ curl -O https://raw.githubusercontent.com/Denperidge/filecat/refs/heads/main/src
 # Show help
 python filecat.py --help
 
-# Compress & move to trash
+# Compress & move to trash (~/.filecat/trash/)
 python filecat.py trashpress file1.png file2.txt
+
+# Return list of checksum for all passed files
+python filecat.py checksum file1.png directory/
 ```
 
 ### Nemo usage

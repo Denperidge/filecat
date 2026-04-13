@@ -15,17 +15,17 @@ def remove_files(paths: list[Path]):
             else:
                 remove(path)
 
-# Wrapper for subprocess.run
-# with shell=True & optional env prefix & env var resetting
-def filecat(command: str, prefix:str=None):
+# Wrapper for subprocess.run with shell=True
+# & optional capture_output, env prefix & env var resetting
+def filecat(command: str, prefix:str=None, capture_output:bool=False):
     command = f"python src/filecat.py {command}"
     if prefix:
         command = prefix + " " + command
     command = "unset FILECAT_TRASH && " + command
-    return run(command, shell=True)
+    return run(command, shell=True, capture_output=capture_output)
 
 
-def trashpress_works_as_expected(prefix=None, suffix="",
+def _trashpress_works_as_expected(prefix=None, suffix="",
     EXPECTED_DIR: Path=Path().home().joinpath("./.filecat/trash")):
 
     RELATIVE_PATH = Path("testfile-1")
@@ -55,19 +55,27 @@ def trashpress_works_as_expected(prefix=None, suffix="",
     # Cleanup
     remove_files(INPUT_FILES + EXPECTED_FILES)
 
-
-if __name__ == "__main__":
-    trashpress_works_as_expected()  # Default setup
+def test_trashpress():
+    # Default setup
+    _trashpress_works_as_expected()
     
     # Using --trash arg, relative dir
     RELATIVE_TRASH_DIR = Path(".test-trash/")
     remove_files([RELATIVE_TRASH_DIR])
     assert not RELATIVE_TRASH_DIR.exists()
-    trashpress_works_as_expected(None, f"--trash \'{RELATIVE_TRASH_DIR}\'", RELATIVE_TRASH_DIR)
+    _trashpress_works_as_expected(None, f"--trash \'{RELATIVE_TRASH_DIR}\'", RELATIVE_TRASH_DIR)
 
     # Using FILECAT_TRASH env var
     ABSOLUTE_TRASH_DIR = Path(".testtrash/").absolute()
     remove_files([ABSOLUTE_TRASH_DIR])
     assert not ABSOLUTE_TRASH_DIR.exists()
-    trashpress_works_as_expected(f"FILECAT_TRASH='{ABSOLUTE_TRASH_DIR}'", "", ABSOLUTE_TRASH_DIR)
+    _trashpress_works_as_expected(f"FILECAT_TRASH='{ABSOLUTE_TRASH_DIR}'", "", ABSOLUTE_TRASH_DIR)
     remove_files([ABSOLUTE_TRASH_DIR])
+
+def test_checksum():
+    print(filecat("checksum tests/data/same-as-1/file", None, True).stdout)
+
+if __name__ == "__main__":
+    test_trashpress()
+
+    test_checksum()

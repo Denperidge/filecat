@@ -50,7 +50,7 @@ def check_all_usual_paths(files: list[str]):
 def run(command: str, cwd:str=None, capture_output=False):
     if cwd:
         script = f"cd '{cwd}' && " + command
-    return _run(command, shell=True, capture_output=capture_output)
+    return _run(command, shell=True, encoding="UTF-8", capture_output=capture_output)
 
 """Section: Confirming & GUI"""
 CURSES_SCREEN = False
@@ -99,14 +99,22 @@ def trashpress(files: list[Path], trash_dir: Path):
         else:
             remove(file.absolute())
 
-def checksum(files: list[Path]):
-    run()
+def checksum(files: list[Path], checksumtool: str):
+    string = ""
+    errors = ""
+    for file in files:
+        instance = run(f"{checksumtool} {file}", None, capture_output=True)
+        string += instance.stdout
+        errors += instance.stderr
+
+    print(string)
+    print_red(errors)
+    return string
 
 commands = {
     "trashpress": trashpress,
     "checksum": checksum
 }
-
 
 """SECTION: command-line interface"""
 if __name__ == "__main__":
@@ -115,9 +123,12 @@ if __name__ == "__main__":
         description=f"A file management CLI for CLI tool popup integrations in the file browser. Designed to integrate with Nemo actions: see {__file__} for an example action")
     parser.add_argument("command", choices=commands.keys())
     parser.add_argument("files", nargs="*")
-    parser.add_argument("--trash",
+    parser.add_argument("--trash", "-t",
         default=environ.get("FILECAT_TRASH", Path.home().joinpath("./.filecat/trash/")),
         help="[trashpress], directory to move compressed files to. Defaults to the FILECAT_TRASH env var if defined, otherwise ~/.filecat/trash/")
+    parser.add_argument("--checksumtool", "-c",
+        default=environ.get("FILECAT_CHECKSUMTOOL", "sha512sum"),
+        help="[checksum] Executable to be used for checksum calculations. Needs to be in PATH or a full path. Defaults to FILECAT_CHECKSUMTOOL if set, otherwise sha512sum")
 
     args = parser.parse_args()
 
@@ -130,7 +141,8 @@ if __name__ == "__main__":
             case "trashpress":
                 trashpress(files, trash_dir=Path(args.trash))
             case "checksum":
-                pass
+                assert " " not in args.checksumtool
+                checksum(files, args.checksumtool)
     # If an error occurs during the command,
     # print it in red and require ENTER to continue
     except Exception as e:
