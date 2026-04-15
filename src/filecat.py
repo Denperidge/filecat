@@ -104,10 +104,12 @@ def checksum(files: list[Path], checksumtool: str):
     errors = []
     for file in files:
         if file.is_dir():
+            print(f"Traversing directory: {file}")
             [dir_checksums, dir_errors] = checksum(list(file.glob("*")), checksumtool)
             result += dir_checksums
             errors += dir_errors
         else:
+            print(f"Calculating checksum: {file}")
             instance = run(f"{checksumtool} {file}", None, capture_output=True)
             result.append(instance.stdout.strip())
             error = instance.stderr.strip()
