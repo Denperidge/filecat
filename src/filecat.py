@@ -149,7 +149,9 @@ if __name__ == "__main__":
                 assert " " not in args.checksumtool
                 [result, errors] = checksum(files, checksumtool=args.checksumtool)
                 print(result)
-                print_red(errors)
+                if errors != "":
+                    print_red(errors)
+                    input("Press ENTER to close...")
     # If an error occurs during the command,
     # print it in red and require ENTER to continue
     except Exception as e:
