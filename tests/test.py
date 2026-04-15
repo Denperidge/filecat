@@ -106,6 +106,17 @@ c2d4ece00176bf7a01da1cf0f8170d237e3b34595de99289a9c108fabdaeb481bbd1cd1bf3193f9f
     assert EXPECTED_DIRECTORY == directory_sha512
     assert file_sha512 in directory_sha512
 
+    same_as_1 = filecat("checksum tests/data/same-as-1/", None, True).stdout
+    same_as_2 = filecat("checksum tests/data/same-as-2/", None, True).stdout
+    different_than_both = filecat("checksum tests/data/different-than-both/", None, True).stdout
+
+    # Two directories with identical contents have consistent results, minus the part being different
+    assert same_as_1 == same_as_2.replace("same-as-2", "same-as-1")
+    # Sanity check
+    assert same_as_1 != different_than_both
+    assert same_as_2 != different_than_both
+
+
 if __name__ == "__main__":
     test_trashpress()   # INPUT: ynyy
 
