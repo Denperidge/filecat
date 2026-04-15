@@ -100,16 +100,20 @@ def trashpress(files: list[Path], trash_dir: Path):
             remove(file.absolute())
 
 def checksum(files: list[Path], checksumtool: str):
-    string = ""
+    result = ""
     errors = ""
     for file in files:
-        instance = run(f"{checksumtool} {file}", None, capture_output=True)
-        string += instance.stdout
-        errors += instance.stderr
+        if file.is_dir():
+            [dir_checksums, dir_errors] = checksum(list(file.glob("*")), checksumtool)
+            result += dir_checksums
+            errors += dir_errors
+        else:
+            instance = run(f"{checksumtool} {file}", None, capture_output=True)
+            result += instance.stdout
+            errors += instance.stderr
 
-    print(string)
-    print_red(errors)
-    return string
+    result = result.strip("\n")
+    return [result, errors]
 
 commands = {
     "trashpress": trashpress,
@@ -120,7 +124,8 @@ commands = {
 if __name__ == "__main__":
     # Parse arguments
     parser = ArgumentParser(prog="filecat",
-        description=f"A file management CLI for CLI tool popup integrations in the file browser. Designed to integrate with Nemo actions: see {__file__} for an example action")
+        usage="python filecat.py --help",
+        description=f"A file management CLI for CLI tool popup integrations in the file browser. Designed to integrate with Nemo actions: see the repo for an example action")
     parser.add_argument("command", choices=commands.keys())
     parser.add_argument("files", nargs="*")
     parser.add_argument("--trash", "-t",
@@ -142,7 +147,9 @@ if __name__ == "__main__":
                 trashpress(files, trash_dir=Path(args.trash))
             case "checksum":
                 assert " " not in args.checksumtool
-                checksum(files, args.checksumtool)
+                [result, errors] = checksum(files, checksumtool=args.checksumtool)
+                print(result)
+                print_red(errors)
     # If an error occurs during the command,
     # print it in red and require ENTER to continue
     except Exception as e:
