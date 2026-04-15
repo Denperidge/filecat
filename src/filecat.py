@@ -100,42 +100,35 @@ def trashpress(files: list[Path], trash_dir: Path):
             remove(file.absolute())
 
 def checksum(files: list[Path], checksumtool: str):
-    result = []
+    results = []
     errors = []
     for file in files:
         if file.is_dir():
             print(f"Traversing directory: {file}")
-            [dir_checksums, dir_errors] = checksum(list(file.glob("*")), checksumtool)
-            result += dir_checksums
-            errors += dir_errors
+            results += checksum(list(file.glob("*")), checksumtool)
         else:
             print(f"Calculating checksum: {file}")
             instance = run(f"{checksumtool} {file}", None, capture_output=True)
-            result.append(instance.stdout.strip())
+            results.append(instance.stdout.strip())
             error = instance.stderr.strip()
             if error != "":
                 errors.append(instance.stderr.strip())
 
-    return [result, errors]
+    if len(errors) > 0:
+        input("Press ENTER to close...")
+        print_red(f"'{"\n".join(errors)}'")
+    return results
 
 def samesies(files: list[Path], checksumtool: str):
     if len(files) < 2:
         print_red("[samesies] needs at least 2 files to be passed!")
         exit(1)
-    [result, err] = checksum([files.pop()], checksumtool)
-    if len(err) > 0:
-        raise Exception
-    result = result[0].split(" ")
-    control_file = result.pop()
-    control_hash = result[0]
+    results = checksum([files.pop()], checksumtool)[0].split(" ")
+    control_file = results.pop()
+    control_hash = results[0]
 
     for file in files:
-        [result, errors] = checksum([file], checksumtool)
-        if len(errors) > 0:
-            for error in errors:
-                print_red(error)
-            raise Exception("\n".join(errors))
-        result = result[0].split(" ")
+        result = checksum([file], checksumtool)[0].split(" ")
         file_name = result.pop()
         file_hash = result[0]
         # TODO document split behaviour
@@ -178,10 +171,6 @@ if __name__ == "__main__":
                 trashpress(files, trash_dir=Path(args.trash))
             case "checksum":
                 [result, errors] = checksum(files, checksumtool=args.checksumtool)
-                print("\n".join(result))
-                if len(errors) > 0:
-                    print_red(f"'{"\n".join(errors)}'")
-                    input("Press ENTER to close...")
             case "samesies":
                 samesies(files, args.checksumtool)
     # If an error occurs during the command,
