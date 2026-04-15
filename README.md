@@ -22,6 +22,9 @@ python filecat.py trashpress file1.png file2.txt
 
 # Return list of checksums for all passed files
 python filecat.py checksum file1.png directory/
+
+# Check if contents/checksums are identical
+python filecat.py samesies file1.txt file2.txt
 ```
 
 ### Nemo usage
@@ -36,7 +39,7 @@ Done! Further configuration can be done inside Nemo > Edit > Preferences > Plugi
 
 ### Run tests
 ```sh
-echo yyyn | python tests/test.py
+echo yyyn\n | python tests/test.py
 ```
 
 ## Explanation

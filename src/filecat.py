@@ -122,7 +122,7 @@ def checksum(files: list[Path], checksumtool: str):
 def samesies(files: list[Path], checksumtool: str):
     if len(files) < 2:
         print_red("[samesies] needs at least 2 files to be passed!")
-        exit(1)
+        raise Exception()
     results = checksum([files.pop()], checksumtool)[0].split(" ")
     control_file = results.pop()
     control_hash = results[0]
@@ -183,3 +183,4 @@ if __name__ == "__main__":
         for trace in traceback_lines:
             print_red(trace)
         input("Press ENTER to close...")
+        raise e

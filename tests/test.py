@@ -117,7 +117,20 @@ c2d4ece00176bf7a01da1cf0f8170d237e3b34595de99289a9c108fabdaeb481bbd1cd1bf3193f9f
     assert same_as_2 != different_than_both
 
 
-if __name__ == "__main__":
-    test_trashpress()   # INPUT: ynyy
+def test_samesies():
+    from json import dumps
+    result = filecat("samesies tests/data/same-as-1/file tests/data/same-as-2/file", None, True)
+    assert result.stdout.endswith("tests/data/same-as-2/file == tests/data/same-as-1/file\u001b[0m\n")
+    assert result.returncode == 0
+    # Errrors on non-identical files
+    try:
+        # INPUT: \n
+        should_error = filecat("samesies tests/data/same-as-1/file tests/data/different-than-both/meow", None, True)
+        assert False  # If no error is throw, something is wrong
+    except:
+        assert should_error.returncode == 1
 
+if __name__ == "__main__":
+    test_trashpress()   # INPUT: yyyn
     test_checksum()
+    test_samesies()  # INPUT: \n
