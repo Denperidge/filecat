@@ -170,9 +170,11 @@ if __name__ == "__main__":
             case "trashpress":
                 trashpress(files, trash_dir=Path(args.trash))
             case "checksum":
-                [result, errors] = checksum(files, checksumtool=args.checksumtool)
+                results = checksum(files, checksumtool=args.checksumtool)
+                for result in results:
+                    print(result)
             case "samesies":
-                samesies(files, args.checksumtool)
+                samesies(files, checksumtool=args.checksumtool)
     # If an error occurs during the command,
     # print it in red and require ENTER to continue
     except Exception as e:
