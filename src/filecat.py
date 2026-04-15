@@ -118,9 +118,37 @@ def checksum(files: list[Path], checksumtool: str):
 
     return [result, errors]
 
+def samesies(files: list[Path], checksumtool: str):
+    if len(files) < 2:
+        print_red("[samesies] needs at least 2 files to be passed!")
+        exit(1)
+    [result, err] = checksum([files.pop()], checksumtool)
+    if len(err) > 0:
+        raise Exception
+    result = result[0].split(" ")
+    control_file = result.pop()
+    control_hash = result[0]
+
+    for file in files:
+        [result, errors] = checksum([file], checksumtool)
+        if len(errors) > 0:
+            for error in errors:
+                print_red(error)
+            raise Exception("\n".join(errors))
+        result = result[0].split(" ")
+        file_name = result.pop()
+        file_hash = result[0]
+        # TODO document split behaviour
+        if file_hash != control_hash:
+            raise Exception(f"Hashes for {control_file} & {file_name} are not the same ({control_hash} & {file_hash})")
+        else:
+            print_green(f"{control_file} == {file_name}")
+
+
 commands = {
     "trashpress": trashpress,
-    "checksum": checksum
+    "checksum": checksum,
+    "samesies": samesies
 }
 
 """SECTION: command-line interface"""
@@ -136,7 +164,7 @@ if __name__ == "__main__":
         help="[trashpress], directory to move compressed files to. Defaults to the FILECAT_TRASH env var if defined, otherwise ~/.filecat/trash/")
     parser.add_argument("--checksumtool", "-c",
         default=environ.get("FILECAT_CHECKSUMTOOL", "sha512sum"),
-        help="[checksum] Executable to be used for checksum calculations. Needs to be in PATH or a full path. Defaults to FILECAT_CHECKSUMTOOL if set, otherwise sha512sum")
+        help="[checksum, samesies] Executable to be used for checksum calculations. Needs to be in PATH or a full path. Defaults to FILECAT_CHECKSUMTOOL if set, otherwise sha512sum")
 
     args = parser.parse_args()
 
@@ -149,12 +177,13 @@ if __name__ == "__main__":
             case "trashpress":
                 trashpress(files, trash_dir=Path(args.trash))
             case "checksum":
-                assert " " not in args.checksumtool
                 [result, errors] = checksum(files, checksumtool=args.checksumtool)
                 print("\n".join(result))
                 if len(errors) > 0:
                     print_red(f"'{"\n".join(errors)}'")
                     input("Press ENTER to close...")
+            case "samesies":
+                samesies(files, args.checksumtool)
     # If an error occurs during the command,
     # print it in red and require ENTER to continue
     except Exception as e:

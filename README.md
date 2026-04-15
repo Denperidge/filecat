@@ -6,7 +6,7 @@ A peculiar CLI to combine terminal tools & graphical file browsers
 - *python* (3.9 or newer)
 - *git* or *curl*, depending on your installation method
 - `[trashpress]`: *tar*
-- `[checksum]`: a checksum cli tool. By default, *sha512sum* is used
+- `[checksum, samesies]`: a checksum cli tool. By default, *sha512sum* is used
 
 
 ### CLI usage
