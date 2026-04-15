@@ -100,8 +100,8 @@ def trashpress(files: list[Path], trash_dir: Path):
             remove(file.absolute())
 
 def checksum(files: list[Path], checksumtool: str):
-    result = ""
-    errors = ""
+    result = []
+    errors = []
     for file in files:
         if file.is_dir():
             [dir_checksums, dir_errors] = checksum(list(file.glob("*")), checksumtool)
@@ -109,10 +109,11 @@ def checksum(files: list[Path], checksumtool: str):
             errors += dir_errors
         else:
             instance = run(f"{checksumtool} {file}", None, capture_output=True)
-            result += instance.stdout
-            errors += instance.stderr
+            result.append(instance.stdout.strip())
+            error = instance.stderr.strip()
+            if error != "":
+                errors.append(instance.stderr.strip())
 
-    result = result.strip("\n")
     return [result, errors]
 
 commands = {
@@ -148,9 +149,9 @@ if __name__ == "__main__":
             case "checksum":
                 assert " " not in args.checksumtool
                 [result, errors] = checksum(files, checksumtool=args.checksumtool)
-                print(result)
-                if errors != "":
-                    print_red(errors)
+                print("\n".join(result))
+                if len(errors) > 0:
+                    print_red(f"'{"\n".join(errors)}'")
                     input("Press ENTER to close...")
     # If an error occurs during the command,
     # print it in red and require ENTER to continue
