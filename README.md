@@ -26,8 +26,12 @@ python filecat trashpress file1.png file2.txt
 # Return list of checksums for all passed files
 python filecat checksum file1.png directory/
 
-# Check if contents/checksums are identical
+# Check if contents/checksums of all passed paths are identical
 python filecat samesies file1.txt file2.txt
+
+# Rsync -avP all paths in your clipboard to passed directory, comparing checksums afterwards
+python filecat surefirepaste target_directory
+
 
 # Optionally, make filecat available in path
 chmod +x filecat

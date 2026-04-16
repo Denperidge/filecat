@@ -190,11 +190,19 @@ def confirm(message: str):
 
 """SECTION: commands"""
 commands = dict()
+"""Dictionary of all command descriptions"""
 class Command():
-    def __init__(self, func, descr:str):
-        self.func = func
+    def __init__(self, descr:str, usage:str):
         self.descr = descr
+        self.usage = usage
+    
+    @property
+    def help(self):
+        return f"\n  Description: {self.descr}\n  Usage: python filecat {self.usage}\n"
 
+commands["trashpress"] = Command(
+    "Compress & move to trash",
+    "trashpress file-1.png to_remove/")
 def trashpress(files: list[Path], trash_dir: Path):
     if not trash_dir.exists():
         makedirs(str(trash_dir.absolute()), exist_ok=True)
@@ -215,7 +223,6 @@ def trashpress(files: list[Path], trash_dir: Path):
             rmtree(file.absolute())
         else:
             remove(file.absolute())
-commands["trashpress"] = Command(trashpress, "Compress & move to trash")
 
 def checksum(files: list[Path], checksumtool: str, dont_include_filenames: bool=False):
     results = []
@@ -244,7 +251,9 @@ def checksum(files: list[Path], checksumtool: str, dont_include_filenames: bool=
         input("Press ENTER to close...")
         print_red(f"'{"\n".join(errors)}'")
     return results
-commands["checksum"] = Command(checksum, "Return list of checksums for all passed files")
+commands["checksum"] = Command(
+    "Return list of checksums for all passed files",
+    "checksum file-1.png my_dir/")
 
 def samesies(files: list[Path], checksumtool: str):
     if len(files) < 2:
@@ -262,7 +271,9 @@ def samesies(files: list[Path], checksumtool: str):
     
     fileprint = [str(path) for path in files + [control_file]]
     print_green(f"{" == ".join(fileprint)}")
-commands["samesies"] = Command(samesies, "Check if contents/checksums are identical")
+commands["samesies"] = Command(
+    "Check if contents/checksums of all passed paths are identical",
+    "samesies dir-1/ dir-2/ dir-3/")
 
 def surefirepaste(files: list[Path], checksumtool: str):
     # Only one target
@@ -293,8 +304,9 @@ def surefirepaste(files: list[Path], checksumtool: str):
             raise Exception(f"Error during checksum verification: hashes of {target_file} != {to_copy_file}")
         else:
             print_green(f"Copied & checksum compard {to_copy_file} -> {target_file}")
-    
-commands["surefirepaste"] = Command(surefirepaste, "TODO")
+commands["surefirepaste"] = Command(
+    "Rsync -avP all paths in your clipboard to passed directory, comparing checksums afterwards",
+    "surefirepaste target_dir/")
 
 def surefiremove(files: list[Path]):
     pass
@@ -307,7 +319,7 @@ if __name__ == "__main__":
 
     command_descriptions = "command\n-------\n"
     for command in commands.keys():
-        command_descriptions += f"""[{command}] - {commands[command].descr}\n"""
+        command_descriptions += f"""[{command}]{commands[command].help}\n"""
 
     parser = ArgumentParser(prog="filecat",
         formatter_class=RawTextHelpFormatter,
@@ -320,11 +332,11 @@ if __name__ == "__main__":
         help="[trashpress], directory to move compressed files to.Defaults to the FILECAT_TRASH env var if defined, otherwise ~/.filecat/trash/")
     parser.add_argument("--checksumtool", "-c",
         default=environ.get("FILECAT_CHECKSUMTOOL", "sha512sum"),
-        help="[checksum, samesies] Executable to be used for checksum calculations. Needs to be in PATH or a full path. Defaults to FILECAT_CHECKSUMTOOL if set, otherwise sha512sum")
+        help="[checksum, samesies, surefirepaste, surefiremove] Executable to be used for checksum calculations. Needs to be in PATH or a full path. Defaults to FILECAT_CHECKSUMTOOL if set, otherwise sha512sum")
     parser.add_argument("--no-checksum-filenames",
         default=environ.get("FILECAT_NO_CHECKSUM_FILENAMES", False),
         action="store_true",  # default False
-        help="[checksum] Whether to include the file names when running the checksum command. Defaults to FILECAT_NO_CHECKSUM_FILENAMES if set, otherwise False. When using [samesies], this is automatically set to True")
+        help="[checksum] Whether to include the file names when running the checksum command. Defaults to FILECAT_NO_CHECKSUM_FILENAMES if set, otherwise False. When using [samesies, surefirepaste or surefiremove], this is automatically set to True")
 
     args = parser.parse_args()
 
@@ -345,7 +357,6 @@ if __name__ == "__main__":
                 samesies(files, checksumtool=args.checksumtool)
             case "surefirepaste":
                 surefirepaste(files, checksumtool=args.checksumtool)
-                sleep(10)
     # If an error occurs during the command,
     # print it in red and require ENTER to continue
     except Exception as e:
