@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from subprocess import run as _run
 from argparse import ArgumentParser, Namespace
 from time import sleep
@@ -179,7 +180,7 @@ commands = {
 if __name__ == "__main__":
     # Parse arguments
     parser = ArgumentParser(prog="filecat",
-        usage="python filecat.py --help",
+        usage="python filecat --help",
         description=f"A file management CLI for CLI tool popup integrations in the file browser. Designed to integrate with Nemo actions: see the repo for an example action")
     parser.add_argument("command", choices=commands.keys())
     parser.add_argument("files", nargs="*")

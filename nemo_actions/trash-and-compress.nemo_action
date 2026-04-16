@@ -1,7 +1,7 @@
 [Nemo Action]
 Name=Trash & Compress
 Comment=Trash & Compress
-Exec=alacritty-run "Trashpress" 'python ~/.local/share/nemo/actions/filecat.py trashpress %F'
+Exec=alacritty-run "Trashpress" 'python ~/.local/share/nemo/actions/filecat trashpress %F'
 Quote=double
 Icon-Name=bug-buddy
 Selection=Any

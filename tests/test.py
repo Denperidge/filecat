@@ -19,7 +19,7 @@ def remove_files(paths: list[Path]):
 # Wrapper for subprocess.run with shell=True
 # & optional capture_output, env prefix & env var resetting
 def filecat(command: str, prefix:str=None, capture_output:bool=False):
-    command = f"python filecat.py {command}"
+    command = f"python filecat {command}"
     if prefix:
         command = prefix + " " + command
     command = "unset FILECAT_TRASH && " + command
