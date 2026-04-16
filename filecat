@@ -89,6 +89,16 @@ def parse_bool_arg(args: Namespace, key: str):
     else: 
         raise Exception(f"The value for {key} is invalid! Expected boolean or one of {','.join(valid_true + valid_false)}")
 
+def get_clipboard():
+    """Wrapper around wl-paste, returning a list of clipboard items,
+    or raises an Exception if there is nothing in the clipboard"""
+    clipboard = run("wl-paste", None, True)
+    if clipboard.returncode == 0:
+        return clipboard.stdout.strip().split("\n")
+    else:
+        print(clipboard.stderr)
+        raise Exception(clipboard.stderr)
+
 USUAL_PATHS = [str(Path.home().absolute()), "/mnt/"]
 def check_all_usual_paths(files: list[str|Path]):
     """
@@ -254,12 +264,37 @@ def samesies(files: list[Path], checksumtool: str):
     print_green(f"{" == ".join(fileprint)}")
 commands["samesies"] = Command(samesies, "Check if contents/checksums are identical")
 
-def surefirecopy(files: list[Path]):
-    print(files)
-    #if len(files) != 2:
-    #    pass
-    #run()
-commands["surefirecopy"] = Command(surefirecopy, "TODO")
+def surefirepaste(files: list[Path], checksumtool: str):
+    # Only one target
+    if len(files) != 1:
+        raise Exception(f"Incorrect number of destination files passed! Expected 1, got {len(files)}")
+    # target is directory
+    target = files[0]
+    if not target.is_dir():
+        raise Exception(f"Target not a directory: {target}")
+    to_copy_files = get_clipboard()
+
+    for to_copy_file in to_copy_files:
+        to_copy_file = Path(to_copy_file)
+        if not to_copy_file.exists():
+            raise Exception(f"Can't copy non existing file: {to_copy_file}")
+        header(f"surefirepaste {to_copy_file} -> {target}")
+        
+        run(f"rsync -avP {to_copy_file} {target}")
+        
+        print(target)
+        print(to_copy_file.name)
+        to_copy_checksum = checksum([to_copy_file], checksumtool=checksumtool, dont_include_filenames=True)
+        
+        print(to_copy_file.name)
+        target_file = target.joinpath(to_copy_file.name)
+        target_file_checksum = checksum([target_file], checksumtool=checksumtool, dont_include_filenames=True)
+        if to_copy_checksum != target_file_checksum:
+            raise Exception(f"Error during checksum verification: hashes of {target_file} != {to_copy_file}")
+        else:
+            print_green(f"Copied & checksum compard {to_copy_file} -> {target_file}")
+    
+commands["surefirepaste"] = Command(surefirepaste, "TODO")
 
 def surefiremove(files: list[Path]):
     pass
@@ -308,6 +343,9 @@ if __name__ == "__main__":
                     print(result)
             case "samesies":
                 samesies(files, checksumtool=args.checksumtool)
+            case "surefirepaste":
+                surefirepaste(files, checksumtool=args.checksumtool)
+                sleep(10)
     # If an error occurs during the command,
     # print it in red and require ENTER to continue
     except Exception as e:

@@ -1,0 +1,9 @@
+[Nemo Action]
+Name=Safe paste into dir
+Comment=Combining rsync and checksum verification
+Exec=alacritty-run "Safe Paste" 'python ~/.local/share/nemo/actions/filecat surefirepaste %F'
+Quote=double
+Icon-Name=bug-buddy
+Selection=1
+Extensions=dir;
+Dependencies=wl-paste;

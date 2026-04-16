@@ -3,10 +3,13 @@ A peculiar CLI to combine terminal tools & graphical file browsers
 
 ## How-to
 ### Requirements:
-- *python* (3.9 or newer)
-- *git* or *curl*, depending on your installation method
-- `[trashpress]`: *tar*
-- `[checksum, samesies]`: a checksum cli tool. By default, *sha512sum* is used
+- **python** (3.9 or newer)
+- **git** or **curl**, depending on your installation method
+- `[trashpress]`: **tar**
+- `[checksum, samesies, surefirepaste, surefirepaste]`: a checksum cli tool. By default, *sha512sum* is used
+- `[surefirepaste, surefiremove]`: **rsync**, **wl-paste**
+
+\*Due to how filecat is designed, the above requirements can be changed easily! Simply check the command function and/or the `run()` usages in [filecat](filecat)
 
 
 ### CLI usage
