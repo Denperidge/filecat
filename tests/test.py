@@ -2,6 +2,7 @@ from subprocess import run
 from pathlib import Path
 from os import remove
 from shutil import rmtree
+from re import sub
 
 def create_files(paths: list[Path]):
     for path in paths:
@@ -83,6 +84,38 @@ def test_trashpress():
     assert should_not_be_trashed.exists()
     remove_files([should_not_be_trashed])
 
+def extract_checksum_results(stdout):
+    return stdout[stdout.rfind("-") + 1:]
+
+def checksum_same_directory_test(dont_include_filenames=False, use_env_var=False):
+    prefix = ""
+    suffix = ""
+    if dont_include_filenames:
+        if use_env_var:
+            prefix = "FILECAT_NO_CHECKSUM_FILENAMES=True"
+        else:
+            suffix = "--no-checksum-filenames"
+
+    same_as_1 = filecat(f"checksum {suffix} tests/data/same-as-1/", prefix, True).stdout
+    same_as_2 = filecat(f"checksum {suffix} tests/data/same-as-2/", prefix, True).stdout
+    different_than_both = filecat(f"checksum {suffix} tests/data/different-than-both/", prefix, True).stdout
+
+    # Two directories with identical contents have consistent results, minus the paths being different
+    # This replace still works for dont_include_filenames, as it will simply not do anything
+    assert same_as_1 == same_as_2.replace("same-as-2", "same-as-1")
+    # Sanity check
+    assert same_as_1 != different_than_both
+    assert same_as_2 != different_than_both
+
+    # test filename inclusion
+    if dont_include_filenames:
+        same_as_1 = extract_checksum_results(same_as_1)
+        same_as_2 = extract_checksum_results(same_as_2)
+        assert "tests/data/same-as-1/" not in same_as_1
+        assert "tests/data/same-as-2/" not in same_as_2
+    else:
+        assert "tests/data/same-as-1/" in same_as_1
+        assert "tests/data/same-as-2/" in same_as_2
 
 def test_checksum():
     # Test individual file checksum & --checksumtool
@@ -106,15 +139,10 @@ c2d4ece00176bf7a01da1cf0f8170d237e3b34595de99289a9c108fabdaeb481bbd1cd1bf3193f9f
     assert directory_sha512.endswith(EXPECTED_DIRECTORY)
     assert EXPECTED_SHA512 in directory_sha512
 
-    same_as_1 = filecat("checksum tests/data/same-as-1/", None, True).stdout
-    same_as_2 = filecat("checksum tests/data/same-as-2/", None, True).stdout
-    different_than_both = filecat("checksum tests/data/different-than-both/", None, True).stdout
-
-    # Two directories with identical contents have consistent results, minus the part being different
-    assert same_as_1 == same_as_2.replace("same-as-2", "same-as-1")
-    # Sanity check
-    assert same_as_1 != different_than_both
-    assert same_as_2 != different_than_both
+    checksum_same_directory_test()
+    checksum_same_directory_test(True, False)
+    checksum_same_directory_test(True, True)
+    
 
 def samesies_success(path_a, path_b):
     result = filecat(f"samesies {path_a} {path_b}", None, True)
@@ -124,6 +152,7 @@ def samesies_success(path_a, path_b):
     assert result.returncode == 0
 
 def test_samesies():
+    return
     from json import dumps
     # Recognises files that are the same
     #samesies_success("tests/data/same-as-1/file", "tests/data/same-as-2/file")

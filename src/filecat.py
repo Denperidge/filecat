@@ -1,5 +1,5 @@
 from subprocess import run as _run
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from time import sleep
 from pathlib import Path
 from shutil import rmtree
@@ -27,6 +27,21 @@ def header(text: str):
     print_green("-" * len(text))
 
 """SECTION: Program utils"""
+def parse_bool_arg(args: Namespace, key: str):
+    valid_true = ["true", "1", "y"]
+    valid_false = ["false", "0", "n"]
+    value = getattr(args, key) 
+    if type(value) == str:
+        value = value.strip().lower()
+        if value in valid_true:
+            return True
+        elif value in valid_false:
+            return False
+        else:
+            raise Exception(f"The value for {key} is invalid! Expected boolean or one of {','.join(valid_true + valid_false)}")
+    else:
+        return value
+
 # Parses a list of Path objects, checking
 # if any passed filepaths are in non-usual locations
 # E.G. not home directory & not a mounted drive
@@ -99,24 +114,24 @@ def trashpress(files: list[Path], trash_dir: Path):
         else:
             remove(file.absolute())
 
-def checksum(files: list[Path], checksumtool: str, include_filenames: bool=True):
+def checksum(files: list[Path], checksumtool: str, dont_include_filenames: bool=False):
     results = []
     errors = []
     for file in files:
         if file.is_dir():
             # If directory, calculate checksums for every 
             print(f"Traversing directory: {file}")
-            results += checksum(list(file.glob("*")), checksumtool)
+            results += checksum(list(file.glob("*")), checksumtool, dont_include_filenames=dont_include_filenames)
         else:
             # If individual file, calculate checksum
             print(f"Calculating checksum: {file}")
             instance = run(f"{checksumtool} {file}", None, capture_output=True)
             
-            if include_filenames:
-                result = instance.stdout.strip()
-            else:
+            if dont_include_filenames:
                 result = instance.stdout.split(" ")[0].strip()
-                print("@@@")
+            else:
+                result = instance.stdout.strip()
+
             results.append(result)
             error = instance.stderr.strip()
             if error != "":
@@ -132,11 +147,11 @@ def samesies(files: list[Path], checksumtool: str):
         print_red("[samesies] needs at least 2 files to be passed!")
         raise Exception()
     control_file = files.pop()
-    control_results = checksum([control_file], checksumtool, include_filenames=False)
+    control_results = checksum([control_file], checksumtool, dont_include_filenames=True)
     control_hashes = "\n".join(control_results)
 
     for file in files:
-        results = checksum([file], checksumtool, include_filenames=False)
+        results = checksum([file], checksumtool, dont_include_filenames=True)
         hashes = "\n".join(results)
         if hashes != control_hashes:
             raise Exception(f"Hashes for {control_file} & {file} are not the same:\n[{control_file}] '{control_hashes}'\nIs not the same as\n[{file}] '{hashes}')")
@@ -165,6 +180,10 @@ if __name__ == "__main__":
     parser.add_argument("--checksumtool", "-c",
         default=environ.get("FILECAT_CHECKSUMTOOL", "sha512sum"),
         help="[checksum, samesies] Executable to be used for checksum calculations. Needs to be in PATH or a full path. Defaults to FILECAT_CHECKSUMTOOL if set, otherwise sha512sum")
+    parser.add_argument("--no-checksum-filenames",
+        default=environ.get("FILECAT_NO_CHECKSUM_FILENAMES", False),
+        action="store_true",  # default False
+        help="[checksum] Whether to include the file names when running the checksum command. Defaults to FILECAT_NO_CHECKSUM_FILENAMES if set, otherwise False. When using [samesies], this is automatically set to True")
 
     args = parser.parse_args()
 
@@ -177,7 +196,8 @@ if __name__ == "__main__":
             case "trashpress":
                 trashpress(files, trash_dir=Path(args.trash))
             case "checksum":
-                results = checksum(files, checksumtool=args.checksumtool)
+                results = checksum(files, checksumtool=args.checksumtool, dont_include_filenames=parse_bool_arg(args, "no_checksum_filenames"))
+                header("Checksum results")
                 for result in results:
                     print(result)
             case "samesies":
