@@ -99,17 +99,25 @@ def trashpress(files: list[Path], trash_dir: Path):
         else:
             remove(file.absolute())
 
-def checksum(files: list[Path], checksumtool: str):
+def checksum(files: list[Path], checksumtool: str, include_filenames: bool=True):
     results = []
     errors = []
     for file in files:
         if file.is_dir():
+            # If directory, calculate checksums for every 
             print(f"Traversing directory: {file}")
             results += checksum(list(file.glob("*")), checksumtool)
         else:
+            # If individual file, calculate checksum
             print(f"Calculating checksum: {file}")
             instance = run(f"{checksumtool} {file}", None, capture_output=True)
-            results.append(instance.stdout.strip())
+            
+            if include_filenames:
+                result = instance.stdout.strip()
+            else:
+                result = instance.stdout.split(" ")[0].strip()
+                print("@@@")
+            results.append(result)
             error = instance.stderr.strip()
             if error != "":
                 errors.append(instance.stderr.strip())
@@ -123,19 +131,18 @@ def samesies(files: list[Path], checksumtool: str):
     if len(files) < 2:
         print_red("[samesies] needs at least 2 files to be passed!")
         raise Exception()
-    results = checksum([files.pop()], checksumtool)[0].split(" ")
-    control_file = results.pop()
-    control_hash = results[0]
+    control_file = files.pop()
+    control_results = checksum([control_file], checksumtool, include_filenames=False)
+    control_hashes = "\n".join(control_results)
 
     for file in files:
-        result = checksum([file], checksumtool)[0].split(" ")
-        file_name = result.pop()
-        file_hash = result[0]
-        # TODO document split behaviour
-        if file_hash != control_hash:
-            raise Exception(f"Hashes for {control_file} & {file_name} are not the same ({control_hash} & {file_hash})")
-        else:
-            print_green(f"{control_file} == {file_name}")
+        results = checksum([file], checksumtool, include_filenames=False)
+        hashes = "\n".join(results)
+        if hashes != control_hashes:
+            raise Exception(f"Hashes for {control_file} & {file} are not the same:\n[{control_file}] '{control_hashes}'\nIs not the same as\n[{file}] '{hashes}')")
+    
+    fileprint = [str(path) for path in files + [control_file]]
+    print_green(f"{" == ".join(fileprint)}")
 
 
 commands = {

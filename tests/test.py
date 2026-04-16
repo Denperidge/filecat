@@ -116,12 +116,21 @@ c2d4ece00176bf7a01da1cf0f8170d237e3b34595de99289a9c108fabdaeb481bbd1cd1bf3193f9f
     assert same_as_1 != different_than_both
     assert same_as_2 != different_than_both
 
+def samesies_success(path_a, path_b):
+    result = filecat(f"samesies {path_a} {path_b}", None, True)
+    print(result.stdout)
+    print(result.stdout)
+    assert result.stdout.endswith(f"{path_a} == {path_b}\u001b[0m\n")
+    assert result.returncode == 0
 
 def test_samesies():
     from json import dumps
-    result = filecat("samesies tests/data/same-as-1/file tests/data/same-as-2/file", None, True)
-    assert result.stdout.endswith("tests/data/same-as-2/file == tests/data/same-as-1/file\u001b[0m\n")
-    assert result.returncode == 0
+    # Recognises files that are the same
+    #samesies_success("tests/data/same-as-1/file", "tests/data/same-as-2/file")
+    
+    # Recognises directories that are the same
+    samesies_success("tests/data/same-as-1/", "tests/data/same-as-2/") 
+
     # Errrors on non-identical files
     try:
         # INPUT: \n
