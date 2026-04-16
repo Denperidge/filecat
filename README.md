@@ -54,6 +54,7 @@ If you like graphical file browsers in terms of UX/UI whilst preferring the clar
 ### What?
 1. Filecat contains peculiar commands (for example: compress & move to trash using tar, move file/dir using rsync & checksum) and the boilerplate to write them quicker. These can be found in [filecat](src/filecat)
 2. Filecat is designed to perfectly integrate into the [Nemo filebrowser](https://github.com/linuxmint/nemo) and its actions system. These files can be seen in any *.nemo_action file in [src/](src/)
+3. Filecat is configurable through --arguments as well as environment variables. `filecat --help` holds all important usage docs
 
 In my setup, it is used in combination with an [alacritty helper script & niri setup](https://github.com/Denperidge/scripts/blob/345029aa02829fc5a35fbd23fced48449c47b30f/shell-utils/alacritty-run) to create floating terminal popups, but any terminal setup can be used
 

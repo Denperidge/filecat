@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from subprocess import run as _run
-from argparse import ArgumentParser, Namespace
+from argparse import Namespace
 from time import sleep
 from pathlib import Path
 from shutil import rmtree
@@ -179,6 +179,12 @@ def confirm(message: str):
     return selection == "y"
 
 """SECTION: commands"""
+commands = dict()
+class Command():
+    def __init__(self, func, descr:str):
+        self.func = func
+        self.descr = descr
+
 def trashpress(files: list[Path], trash_dir: Path):
     if not trash_dir.exists():
         makedirs(str(trash_dir.absolute()), exist_ok=True)
@@ -199,6 +205,7 @@ def trashpress(files: list[Path], trash_dir: Path):
             rmtree(file.absolute())
         else:
             remove(file.absolute())
+commands["trashpress"] = Command(trashpress, "Compress & move to trash")
 
 def checksum(files: list[Path], checksumtool: str, dont_include_filenames: bool=False):
     results = []
@@ -227,6 +234,7 @@ def checksum(files: list[Path], checksumtool: str, dont_include_filenames: bool=
         input("Press ENTER to close...")
         print_red(f"'{"\n".join(errors)}'")
     return results
+commands["checksum"] = Command(checksum, "Return list of checksums for all passed files")
 
 def samesies(files: list[Path], checksumtool: str):
     if len(files) < 2:
@@ -244,34 +252,37 @@ def samesies(files: list[Path], checksumtool: str):
     
     fileprint = [str(path) for path in files + [control_file]]
     print_green(f"{" == ".join(fileprint)}")
+commands["samesies"] = Command(samesies, "Check if contents/checksums are identical")
 
 def surefirecopy(files: list[Path]):
     print(files)
     #if len(files) != 2:
     #    pass
     #run()
+commands["surefirecopy"] = Command(surefirecopy, "TODO")
 
 def surefiremove(files: list[Path]):
     pass
 
-commands = {
-    "trashpress": trashpress,
-    "checksum": checksum,
-    "samesies": samesies,
-    "surefirecopy": surefirecopy
-}
 
 """SECTION: command-line interface"""
 if __name__ == "__main__":
     # Parse arguments
+    from argparse import ArgumentParser, RawTextHelpFormatter
+
+    command_descriptions = "command\n-------\n"
+    for command in commands.keys():
+        command_descriptions += f"""[{command}] - {commands[command].descr}\n"""
+
     parser = ArgumentParser(prog="filecat",
-        usage="python filecat --help",
-        description=f"A file management CLI for CLI tool popup integrations in the file browser. Designed to integrate with Nemo actions: see the repo for an example action")
-    parser.add_argument("command", choices=commands.keys())
+        formatter_class=RawTextHelpFormatter,
+        epilog="Source repo: https://github.com/Denperidge/filecat/",
+        description=f"A file management CLI for CLI tool popup integrations in the file browser. Designed to integrate with Nemo actions: see the repo for an example .nemo_action")
+    parser.add_argument("command", help=command_descriptions, choices=commands.keys())
     parser.add_argument("files", nargs="*")
     parser.add_argument("--trash", "-t",
         default=environ.get("FILECAT_TRASH", Path.home().joinpath("./.filecat/trash/")),
-        help="[trashpress], directory to move compressed files to. Defaults to the FILECAT_TRASH env var if defined, otherwise ~/.filecat/trash/")
+        help="[trashpress], directory to move compressed files to.Defaults to the FILECAT_TRASH env var if defined, otherwise ~/.filecat/trash/")
     parser.add_argument("--checksumtool", "-c",
         default=environ.get("FILECAT_CHECKSUMTOOL", "sha512sum"),
         help="[checksum, samesies] Executable to be used for checksum calculations. Needs to be in PATH or a full path. Defaults to FILECAT_CHECKSUMTOOL if set, otherwise sha512sum")
