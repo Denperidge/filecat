@@ -22,7 +22,7 @@ def filecat(command: str, prefix:str=None, capture_output:bool=False):
     command = f"python filecat {command}"
     if prefix:
         command = prefix + " " + command
-    command = "unset FILECAT_TRASH && " + command
+    command = "unset FILECAT_TRASH FILECAT_CHECKSUMTOOL FILECAT_NO_CHECKSUM_FILENAMES && " + command
     return run(command, shell=True, encoding="UTF-8", capture_output=capture_output)
 
 
