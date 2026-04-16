@@ -159,15 +159,20 @@ def samesies(files: list[Path], checksumtool: str):
     fileprint = [str(path) for path in files + [control_file]]
     print_green(f"{" == ".join(fileprint)}")
 
-def safe_copy(files: list[Path]):
-    if len(files) != 2:
-        pass
-    run()
+def surefirecopy(files: list[Path]):
+    print(files)
+    #if len(files) != 2:
+    #    pass
+    #run()
+
+def surefiremove(files: list[Path]):
+    pass
 
 commands = {
     "trashpress": trashpress,
     "checksum": checksum,
-    "samesies": samesies
+    "samesies": samesies,
+    "surefirecopy": surefirecopy
 }
 
 """SECTION: command-line interface"""

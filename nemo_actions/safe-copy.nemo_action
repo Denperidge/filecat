@@ -1,0 +1,8 @@
+[Nemo Action]
+Name=Safe Copy
+Comment=Combining rsync and checksum verification
+Exec=alacritty-run "Safe Copy" 'python ~/.local/share/nemo/actions/filecat.py surefirecopy %P %F'
+Quote=double
+Icon-Name=bug-buddy
+Selection=notnone
+Extensions=any
