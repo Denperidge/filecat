@@ -159,6 +159,10 @@ def samesies(files: list[Path], checksumtool: str):
     fileprint = [str(path) for path in files + [control_file]]
     print_green(f"{" == ".join(fileprint)}")
 
+def safe_copy(files: list[Path]):
+    if len(files) != 2:
+        pass
+    run()
 
 commands = {
     "trashpress": trashpress,

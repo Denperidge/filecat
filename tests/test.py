@@ -19,7 +19,7 @@ def remove_files(paths: list[Path]):
 # Wrapper for subprocess.run with shell=True
 # & optional capture_output, env prefix & env var resetting
 def filecat(command: str, prefix:str=None, capture_output:bool=False):
-    command = f"python src/filecat.py {command}"
+    command = f"python filecat.py {command}"
     if prefix:
         command = prefix + " " + command
     command = "unset FILECAT_TRASH && " + command
@@ -67,6 +67,8 @@ def test_trashpress():
     assert not RELATIVE_TRASH_DIR.exists()
     # INPUT: y
     _trashpress_works_as_expected(None, f"--trash \'{RELATIVE_TRASH_DIR}\'", RELATIVE_TRASH_DIR)
+    remove_files([RELATIVE_TRASH_DIR])
+
 
     # Using FILECAT_TRASH env var
     ABSOLUTE_TRASH_DIR = Path(".testtrash/").absolute()

@@ -12,7 +12,7 @@ A peculiar CLI to combine terminal tools & graphical file browsers
 ### CLI usage
 ```sh
 # Download filecat.py
-curl -O https://raw.githubusercontent.com/Denperidge/filecat/refs/heads/main/src/filecat.py
+curl -O https://raw.githubusercontent.com/Denperidge/filecat/refs/heads/main/filecat.py
 
 # Show help
 python filecat.py --help
@@ -33,7 +33,8 @@ python filecat.py samesies file1.txt file2.txt
 git clone https://github.com/Denperidge/filecat.git
 cd filecat
 # Create symbolic links from src/ to the nemo actions directory
-ln -s $(pwd)/src/* ~/.local/share/nemo/actions/
+ln -s $(pwd)/filecat.py ~/.local/share/nemo/actions/
+ln -s $(pwd)/nemo_actions/* ~/.local/share/nemo/actions/
 ```
 Done! Further configuration can be done inside Nemo > Edit > Preferences > Plugins, or by changing the files within [src/](src/)
 
