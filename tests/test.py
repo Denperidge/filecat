@@ -85,7 +85,7 @@ def test_trashpress():
     remove_files([should_not_be_trashed])
 
 def extract_checksum_results(stdout):
-    return stdout[stdout.rfind("-") + 1:]
+    return stdout[stdout.rfind("-------") + 1:]
 
 def checksum_same_directory_test(dont_include_filenames=False, use_env_var=False):
     prefix = ""
@@ -142,25 +142,21 @@ c2d4ece00176bf7a01da1cf0f8170d237e3b34595de99289a9c108fabdaeb481bbd1cd1bf3193f9f
     checksum_same_directory_test()
     checksum_same_directory_test(True, False)
     checksum_same_directory_test(True, True)
-    
 
+from json import dumps
 def samesies_success(path_a, path_b):
     result = filecat(f"samesies {path_a} {path_b}", None, True)
-    print(result.stdout)
-    print(result.stdout)
     assert result.stdout.endswith(f"{path_a} == {path_b}\u001b[0m\n")
     assert result.returncode == 0
 
 def test_samesies():
-    return
-    from json import dumps
     # Recognises files that are the same
-    #samesies_success("tests/data/same-as-1/file", "tests/data/same-as-2/file")
+    samesies_success("tests/data/same-as-1/file", "tests/data/same-as-2/file")
     
     # Recognises directories that are the same
-    samesies_success("tests/data/same-as-1/", "tests/data/same-as-2/") 
+    samesies_success("tests/data/same-as-1", "tests/data/same-as-2") 
 
-    # Errrors on non-identical files
+    # Errors on non-identical files
     try:
         # INPUT: \n
         should_error = filecat("samesies tests/data/same-as-1/file tests/data/different-than-both/meow", None, True)
