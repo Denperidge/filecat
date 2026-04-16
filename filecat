@@ -10,50 +10,116 @@ import curses
 
 """SECTION: logging"""
 # Wrapper for print allowing terminal colour codes
-def _print_colour(message: str, colourCode: int|str):
-    print(f"\x1b[{colourCode}m{message}\x1b[0m")
+def _print_colour(message: str, ansiSGRCode: int|str):
+    """
+    Wrapper for print allowing terminal colour codes
+    
+    Args:
+        text:str - message to display
+        ansiSGRCode:int|str - Select Graphic Rendition integer
+            (see https://en.wikipedia.org/wiki/ANSI_escape_code#SGR)
+    """
+    print(f"\x1b[{ansiSGRCode}m{message}\x1b[0m")
 
-# Wrapper for _print_colour with green pre-set
 def print_green(message: str):
+    """Wrapper for _print_colour with green FG pre-set"""
     _print_colour(message, 32)
 
-# Wrapper for _print_colour with red pre-set
 def print_red(message: str):
+    """Wrapper for _print_colour with red FG pre-set"""
     _print_colour(message, 31)
 
-# Wrapper around print(_green), with newline & underline
+
 def header(text: str):
+    """
+    Wrapper around print(_green), with newline & underline
+    
+    Args:
+        text:str - message to display
+
+    Example:
+        [usage]
+
+            header("Example title")
+    
+        [stdout]
+
+            [newline]
+            Example title
+            -------------
+    """
     print()
     print_green(text)
     print_green("-" * len(text))
 
 """SECTION: Program utils"""
 def parse_bool_arg(args: Namespace, key: str):
+    """
+    When given the result from ArgumentParser.parse_args() and a key,
+    fetch the arg that is expected to be a bool, and parse it into one
+    
+    Args:
+        text:str - message to display
+
+    Example:
+        [usage]
+
+            args = parser.parse_args()
+            verbose = parse_bool_arg(args, "verbose")
+        
+        [output]
+            
+            (NOTE: For the sake of example (args, "verbose") is replaced with the value of args.verbose)
+            parse_bool_args(True or "1" or "y" or "true")  # True
+            parse_bool_args(False or "0" or "n" or "false")  # False
+            parse_bool_args(0 or [] or dict())  # Raises Exception
+    """
     valid_true = ["true", "1", "y"]
     valid_false = ["false", "0", "n"]
-    value = getattr(args, key) 
-    if type(value) == str:
+    value = getattr(args, key)
+    value_type = type(value)
+    if value_type == str:
         value = value.strip().lower()
         if value in valid_true:
             return True
         elif value in valid_false:
             return False
-        else:
-            raise Exception(f"The value for {key} is invalid! Expected boolean or one of {','.join(valid_true + valid_false)}")
-    else:
+    elif value_type == bool:
         return value
+    else: 
+        raise Exception(f"The value for {key} is invalid! Expected boolean or one of {','.join(valid_true + valid_false)}")
 
-# Parses a list of Path objects, checking
-# if any passed filepaths are in non-usual locations
-# E.G. not home directory & not a mounted drive
-usual_paths = [str(Path.home().absolute()), "/mnt/"]
-def check_all_usual_paths(files: list[str]):
+USUAL_PATHS = [str(Path.home().absolute()), "/mnt/"]
+def check_all_usual_paths(files: list[str|Path]):
+    """
+    Parses a list of Path objects, checking if any passed 
+    filepaths are in non-usual locations
+    (for example, not home directory & not a mounted drive).
+    Check the USUAL_PATHS variable for which paths won't throw False
+    
+    Args:
+        files:list[str|Path] - Filepaths to check
+
+    Example:
+
+        returns True:
+
+            check_all_usual_paths([Path("~/example"), Path("/mnt/drive/file")])
+
+        returns False:
+
+            check_all_usual_paths([Path("~"), Path("/mnt/drive/file")])
+            check_all_usual_paths([Path("/mnt/")])
+            check_all_usual_paths([Path("/etc/systemd/")])
+            check_all_usual_paths([Path("~")])
+    """
     for file in files:
         file_path = str(Path(file).absolute())
-        file_path_is_usual = False
-        for usual_path in usual_paths:
+        file_path_is_usual = False  # Assume unusual by default
+        for usual_path in USUAL_PATHS:
+            # If path is a subpath of any of the USUAL_PATH values
             if file_path.startswith(usual_path) and file_path != usual_path:
-                file_path_is_usual = True
+                file_path_is_usual = True  # Mark usual and break
                 break
         # If every usual path is checked and none match,
         if not file_path_is_usual:
@@ -61,25 +127,44 @@ def check_all_usual_paths(files: list[str]):
     # If every path is starts with one of the usual paths, return True
     return True
 
-# Wrapper for subprocess.run
+# 
 # with shell=True & optional manual cwd
-def run(command: str, cwd:str=None, capture_output=False):
+def run(command: str, cwd:str=None, capture_output:bool=False):
+    """
+    Wrapper for subprocess.run with the following pre-set:
+    - shell=True
+    - encoding="UTF-8"
+
+    Args:
+        command: str - command to run in shell
+        cwd:str=None - if defined, run cd {cwd} before the passed command
+        capture_output:bool=False - If set to False, print command output to stdout. If set to True, save stdout to returnValue.stdout
+    """
     if cwd:
         script = f"cd '{cwd}' && " + command
     return _run(command, shell=True, encoding="UTF-8", capture_output=capture_output)
 
 """Section: Confirming & GUI"""
 CURSES_SCREEN = False
+"""Global curses screen variable"""
+
 def setup_curses():
+    """Setup CURSES_SCREEN"""
     screen = curses.initscr()  # Initialize
     curses.noecho()
     curses.cbreak()  # Don't require ENTER
     return screen
 
-# Curses screen to ask for confirmation
-# If the answer is y or Y, return True
-# Else, return False
 def confirm(message: str):
+    """
+    Show a curses screen to ask for confirmation
+    If the answer is y or Y, return True
+    Else, return False
+
+    Args:
+        message:str - Message to display when asking for confirmation.
+            "[y/N]:" will be added automatically
+    """
     global CURSES_SCREEN
     if not CURSES_SCREEN:
         CURSES_SCREEN = setup_curses()
